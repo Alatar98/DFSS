@@ -19,6 +19,22 @@ result = TT.Mult_M_regression(df_scal,'cp',M=2)
 
 print(result.summary())
 
+
+
+tmp = np.linspace(20, 50, 100)
+
+volt = 30*tmp + 0.0214*tmp**3 + np.random.normal(-100,100) +25
+
+df = pd.DataFrame(np.array([volt,tmp]).T, columns=['volt', 'tmp'])
+
+
+
+result2 = TT.Mult_M_regression(df,'volt',M=3)
+
+print(result2.summary())
+
+
+
 exit()
 
 

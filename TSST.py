@@ -14,22 +14,6 @@ from  statsmodels.formula.api import ols
 from sklearn.preprocessing import StandardScaler
 
 
-
-def M_regression(X, Y, M=1):
-    Ms = list(range(1,M+1))
-    df = pd.DataFrame(np.array([X,Y]).T, columns=['X', 'Y'])
-    while True:
-        
-        formula = ''.join(['Y ~ ']+["+I(X**%i)"%m for m in Ms])
-        model = ols(formula,df)
-        fit = model.fit()
-        
-        if (fit.pvalues < 0.05).all():
-            return fit
-        
-        print("Removing X**%i wit highest p-Value of:%f"%(fit.pvalues.argmax(),fit.pvalues.max()))
-        Ms.remove(fit.pvalues.argmax())
-
 def word_iterator(string,words,M,comb):
     comb.append(string)
     words_copy=words.copy()
