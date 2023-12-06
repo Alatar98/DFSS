@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 def word_iterator(string,words,M,comb):
+    'only used by word_multiplicator'
     comb.append(string)
     words_copy=words.copy()
     for word in words:
@@ -24,7 +25,9 @@ def word_iterator(string,words,M,comb):
             word_iterator(string+"*"+word,words_copy,M-1,comb)
         words_copy.remove(word)
 
+
 def word_multiplicator(words,M=2):
+    'returns all possible products with words up to degree M.'
     comb=[]
     words_copy=words.copy()
     for word in words:
@@ -34,22 +37,43 @@ def word_multiplicator(words,M=2):
 
 
 def Mult_M_regression(df,y_name,M=2):
+    '''
+    returns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
+    \ncomponents with p-value > 0.05 are gradually discarded.
+    '''
+    #get the inputs
     words = [col for col in df.columns if col != y_name]
+    #get all possible combinations up to degree M to create the formula
     comb = word_multiplicator(words,M)
+    #iterate until no p-value is bigger 0.05
     while True:
-        
+        #create the formula to be used based on the (remaining) combinations
         formula = ''.join([y_name+' ~ ']+["+I(%s)"%c for c in comb])
         print("Regressing with: "+formula)
+
+        #create the model and fit
         model = ols(formula,df)
         fit = model.fit()
         
+        #check if regression has no more unnecesary components (return)
         if (fit.pvalues < 0.05).all():
+            print("Regression done")
             return fit
         
+        #remove component with highest p-value
         print("Removing %s wit highest p-Value of:%f"%(comb[fit.pvalues.argmax()-1],fit.pvalues.max()))
         comb.remove(comb[fit.pvalues.argmax()-1])
 
 class ExcludingScaler():
+    '''
+    Scaler with (X - X.mean)/X.std\n
+    The Scaler ignores the given column.\n
+    std has a ddof option.\n
+    the scaler has the functions:\n
+    fit to fit the scaler\n
+    std to transform the given data\n
+    rev to inverse_transfomr the given data
+    '''
     def __init__(self, exclude_col=None, mean_val=None, std_val=None, ddof=1, **kwargs):
         self.exclude_col = exclude_col
         self.ddof=ddof
@@ -58,18 +82,25 @@ class ExcludingScaler():
 
 
     def fit(self, X):
-        
+         # check for the specified column
         if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Exclude the specified column
             X_to_fit = X.drop(self.exclude_col, axis=1)
         else:
+            # No column to exclude, simply fit
             X_to_fit = X.copy()
 
+        #TODO check if the init overwrite works
+        #calcuate mean
         self.mean_val = X_to_fit.mean()
+        #if mean values where given at init overwrite the calculated values with the given ones
         if self.mean_val_orig != None:
             mean_val = pd.concat([self.mean_val, self.mean_val_orig], ignore_index=True, sort=False)
             self.mean_val = mean_val.drop_duplicates(keep="last",  ignore_index=True)
         
+        #calcuate std
         self.std_val = X_to_fit.std(ddof=self.ddof)
+        #if std values where given at init overwrite the calculated values with the given ones
         if self.std_val_orig != None:
             std_val = pd.concat([self.std_val, self.std_val_orig], ignore_index=True, sort=False)
             self.std_val = std_val.drop_duplicates(keep="last",  ignore_index=True)
@@ -85,12 +116,8 @@ class ExcludingScaler():
             # No column to exclude, simply apply standardization
             X_to_scale = X
 
-        # Perform operations on the DataFrame without the excluded column
-        # For example, you can apply standardization using the scaler
-
+        # Transform the Data
         X_transformed= (X_to_scale - self.mean_val)/self.std_val
-
-        #X_transformed = pd.DataFrame(self.transform(X_to_scale), index=X_to_scale.index, columns=X_to_scale.columns)
 
         if self.exclude_col is not None and self.exclude_col in X.columns:
             # Add the column back to the DataFrame
@@ -107,12 +134,8 @@ class ExcludingScaler():
             # No column to exclude, simply apply standardization
             X_to_scale = X
 
-        # Perform operations on the DataFrame without the excluded column
-        # For example, you can apply standardization using the scaler
-
+        # Transform the Data
         X_transformed= X_to_scale * self.std_val + self.mean_val
-
-        #X_transformed = pd.DataFrame(self.transform(X_to_scale), index=X_to_scale.index, columns=X_to_scale.columns)
 
         if self.exclude_col is not None and self.exclude_col in X.columns:
             # Add the column back to the DataFrame
@@ -123,6 +146,10 @@ class ExcludingScaler():
 
 
 def stder(X, exclude_col=None, ddof=1):
+    '''
+    creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
+    returns the fitted values and the scaler.
+    '''
     scaler = ExcludingScaler(exclude_col,ddof=1)
     fitted = scaler.fit(X)
     x_std = fitted.std(X)

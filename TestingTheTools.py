@@ -33,7 +33,7 @@ result2 = TT.Mult_M_regression(df,'volt',M=3)
 
 print(result2.summary())
 
-
+TT.word_multiplicator
 
 exit()
 
