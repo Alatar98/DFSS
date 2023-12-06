@@ -3,8 +3,27 @@
 import numpy as np
 import pandas as pd
 from  statsmodels.formula.api import ols
+from scipy.io import loadmat
 
 import TSST as TT
+
+data = loadmat('Feuchtesensor')
+regress = pd.DataFrame({'cp': np.reshape(data['Cp'], -1),
+                        'rf': np.reshape(data['RF'], -1),
+                        't': np.reshape(data['T'], -1)})
+
+
+df_scal, scaler = TT.stder(regress,'cp')
+
+result = TT.Mult_M_regression(df_scal,'cp',M=2)
+
+print(result.summary())
+
+exit()
+
+
+print(TT.word_multiplicator(["A","B","C"],M=5))
+
 
 
 tmp = np.linspace(20, 50, 100)
