@@ -49,7 +49,6 @@ def Mult_M_regression(df,y_name,M=2):
         print("Removing %s wit highest p-Value of:%f"%(comb[fit.pvalues.argmax()-1],fit.pvalues.max()))
         comb.remove(comb[fit.pvalues.argmax()-1])
 
-#TODO  this uses ddof = 0 we use ddof=1  rewrite the function yay
 class ExcludingScaler():
     def __init__(self, exclude_col=None, mean_val=None, std_val=None, ddof=1, **kwargs):
         self.exclude_col = exclude_col
