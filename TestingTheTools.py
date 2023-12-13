@@ -11,17 +11,23 @@ import TSST as TT
 
 
 data = loadmat('Feuchtesensor')
-regress = pd.DataFrame({'cp': np.reshape(data['Cp'], -1),
-                        'rf': np.reshape(data['RF'], -1),
-                        't': np.reshape(data['T'], -1)})
+regress = pd.DataFrame({'a': np.reshape(data['Cp'], -1),
+                        'b': np.reshape(data['RF'], -1),
+                        'c': np.reshape(data['T'], -1)})
 
 
-df_scal, scaler = TT.stder(regress,'cp')
+df_scal, scaler = TT.stder(regress,'a')
 
-result = TT.Mult_M_regression(df_scal,'cp',M=2)
+result = TT.Mult_M_regression(df_scal, 'a', extend_terms=["np.log(b)","2**b"])
 
 print(result.summary())
 
+
+print(TT.replace_simple("single2**2+single3","a"))
+
+
+
+exit()
 
 
 tmp = np.linspace(20, 50, 100)
