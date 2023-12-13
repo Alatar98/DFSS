@@ -14,7 +14,7 @@ from  statsmodels.formula.api import ols
 from sklearn.preprocessing import StandardScaler
 
 
-def word_iterator(string,words,M,comb):
+def word_multiplicator_backend(string,words,M,comb):
     'only used by word_multiplicator'
     comb.append(string)
     words_copy=words.copy()
@@ -22,7 +22,7 @@ def word_iterator(string,words,M,comb):
         if M==1:
             comb.append(string+"*"+word)
         else: 
-            word_iterator(string+"*"+word,words_copy,M-1,comb)
+            word_multiplicator_backend(string+"*"+word,words_copy,M-1,comb)
         words_copy.remove(word)
 
 
@@ -31,20 +31,53 @@ def word_multiplicator(words,M=2):
     comb=[]
     words_copy=words.copy()
     for word in words:
-        word_iterator(word,words_copy,M-1,comb)
+        word_multiplicator_backend(word,words_copy,M-1,comb)
         words_copy.remove(word)
     return comb
 
 
-def Mult_M_regression(df,y_name,M=2):
+def word_interactor_backend(string,words,M,comb):
+    'only used by word_interactor'
+    comb.append(string)
+    words_copy=words.copy()
+    for word in words:
+        if M==1:
+            comb.append(string+"*"+word)
+        else: 
+            words_copy.remove(word)
+            word_interactor_backend(string+"*"+word,words_copy,M-1,comb)
+        
+
+
+def word_interactor(words,M=2):
+    'returns all possible interactions with words up to degree M.'
+    #m must be smaller then len(words)
+    if M>len(words):
+        M=len(words)
+    comb=[]
+    words_copy=words.copy()
+    for word in words:
+        words_copy.remove(word)
+        word_interactor_backend(word,words_copy,M-1,comb)
+    return comb
+
+
+#TODO add terms explict , terms implicit (singleM, interM, fullM)  seperate function for implicit
+def Mult_M_regression(df,y_name,M=2, full=True):
     '''
     returns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
     \ncomponents with p-value > 0.05 are gradually discarded.
+    
+    #TODO example
     '''
+    #TODO example
     #get the inputs
     words = [col for col in df.columns if col != y_name]
     #get all possible combinations up to degree M to create the formula
-    comb = word_multiplicator(words,M)
+    if full:
+        comb = word_multiplicator(words,M)
+    else:
+        comb = word_interactor(words,M)
     #iterate until no p-value is bigger 0.05
     while True:
         #create the formula to be used based on the (remaining) combinations
