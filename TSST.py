@@ -10,6 +10,7 @@ Created on Wed Dec 06 15:48:43 2023
 import numpy as np
 import pandas as pd
 from  statsmodels.formula.api import ols
+import re
 
 from sklearn.preprocessing import StandardScaler
 
@@ -61,24 +62,13 @@ def word_interactor(words,M=2):
         word_interactor_backend(word,words_copy,M-1,comb)
     return comb
 
+def regression_fit(df, y_name, comb, p_val=0.05):
+    '''
+    \nreturns a fitted regression of the df using y_name as output and the formula of comb elements.
+    \ncomponents with p-value > p_val are gradually discarded.
+    '''
 
-#TODO add terms explict , terms implicit (singleM, interM, fullM)  seperate function for implicit
-def Mult_M_regression(df,y_name,M=2, full=True):
-    '''
-    returns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
-    \ncomponents with p-value > 0.05 are gradually discarded.
-    
-    #TODO example
-    '''
-    #TODO example
-    #get the inputs
-    words = [col for col in df.columns if col != y_name]
-    #get all possible combinations up to degree M to create the formula
-    if full:
-        comb = word_multiplicator(words,M)
-    else:
-        comb = word_interactor(words,M)
-    #iterate until no p-value is bigger 0.05
+    #iterate until no p-value is bigger then p_val
     while True:
         #create the formula to be used based on the (remaining) combinations
         formula = ''.join([y_name+' ~ ']+["+I(%s)"%c for c in comb])
@@ -89,13 +79,79 @@ def Mult_M_regression(df,y_name,M=2, full=True):
         fit = model.fit()
         
         #check if regression has no more unnecesary components (return)
-        if (fit.pvalues < 0.05).all():
+        if (fit.pvalues < p_val).all():
             print("Regression done")
             return fit
         
         #remove component with highest p-value
         print("Removing %s wit highest p-Value of:%f"%(comb[fit.pvalues.argmax()-1],fit.pvalues.max()))
         comb.remove(comb[fit.pvalues.argmax()-1])
+
+
+
+#TODO add terms explict , terms implicit (singleM, interM, fullM)  seperate function for implicit
+def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
+    '''
+    \nreturns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
+    \ncomponents with p-value > 0.05 are gradually discarded.
+    
+    \nExample:
+    \nMult_M_regression(df, 'a', extend_terms=["np.log(b)","2**b"])
+    \nwith df columns ["a","b","c"] will result in the following first regression function
+    \na ~ +I(b)+I(b*b)+I(b*c)+I(c)+I(c*c)+I(np.log(b))+I(2**b)
+    '''
+
+    #get the inputs
+    words = [col for col in df.columns if col != y_name]
+    #get all possible combinations up to degree M to create the formula
+    if full:
+        comb = word_multiplicator(words,M)
+    else:
+        comb = word_interactor(words,M)
+
+    comb.extend(extend_terms)
+
+    return regression_fit(df, y_name, comb, p_val=p_val)
+
+
+#TODO  finish   
+def replace_simple(instring,words):
+    
+    pattern = re.compile(f'{re.escape("single")}(\d+)?')
+
+    def replacement(match):
+        # Extract the number from the match, or default to 1 if not present
+        count = int(match.group(1)) if match.group(1) else 1
+        # Repeat the replacement string according to the count
+        return ["a**"+count,"a"]  #a + a**2 + ... +a**count
+
+    # Use the re.sub function with a replacement function
+    result = pattern.sub(replacement, instring)
+    return result
+
+#TODO add terms  terms implicit (singleM, interM, fullM)
+def formula_regression(df, y_name, formula_elements,p_val=0.05):
+    '''
+    \nreturns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
+    \ncomponents with p-value > 0.05 are gradually discarded.
+    
+    \nExample:
+    \nMult_M_regression(df, 'a', extend_terms=["np.log(b)","2**b"])
+    \nwith df columns ["a","b","c"] will result in the following first regression function
+    \na ~ +I(b)+I(b*b)+I(b*c)+I(c)+I(c*c)+I(np.log(b))+I(2**b)
+    '''
+    #TODO write new description
+    comb=[]
+    #get the inputs
+    words = [col for col in df.columns if col != y_name]
+    #get all possible combinations up to degree M to create the formula
+    #comb = word_multiplicator(words,M)
+
+    #comb = word_interactor(words,M)
+
+    comb.extend(extend_terms)
+
+    return regression_fit(df, y_name, comb, p_val=p_val)
 
 class ExcludingScaler():
     '''
