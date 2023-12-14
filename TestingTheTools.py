@@ -5,6 +5,8 @@ import pandas as pd
 from  statsmodels.formula.api import ols
 from scipy.io import loadmat
 
+import re
+
 import TSST as TT
 
 
@@ -18,12 +20,28 @@ regress = pd.DataFrame({'a': np.reshape(data['Cp'], -1),
 
 df_scal, scaler = TT.stder(regress,'a')
 
-result = TT.Mult_M_regression(df_scal, 'a', extend_terms=["np.log(b)","2**b"])
+result = TT.Mult_M_regression(df_scal, 'a')#, extend_terms=["np.log(b)","2**b"])
 
 print(result.summary())
 
 
-print(TT.replace_simple("single2**2+single3","a"))
+#print(TT.replace_simple("single2**2+single3","a"))
+
+liste = [1]
+
+liste.extend([1,2,3])
+#liste.extend(1)
+liste.extend([])
+
+print(liste)
+
+
+print(keyword_match("single**2+single3", "single"))
+
+
+
+
+#TT.formula_regression(df_scal, "a", ["single2**2+single3","full","abc"])
 
 
 

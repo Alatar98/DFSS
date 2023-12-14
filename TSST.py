@@ -114,20 +114,26 @@ def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
     return regression_fit(df, y_name, comb, p_val=p_val)
 
 
-#TODO  finish   
-def replace_simple(instring,words):
-    
-    pattern = re.compile(f'{re.escape("single")}(\d+)?')
+def keyword_match(input_string, keyword):
+    '''
+    \nsearch input_string for keywordN and return [string[:keyword],string[keyword:],N]
+    '''
 
-    def replacement(match):
-        # Extract the number from the match, or default to 1 if not present
-        count = int(match.group(1)) if match.group(1) else 1
-        # Repeat the replacement string according to the count
-        return ["a**"+count,"a"]  #a + a**2 + ... +a**count
+    pattern = re.compile(f'(.*?)({re.escape(keyword)}(\d+)?)')
 
-    # Use the re.sub function with a replacement function
-    result = pattern.sub(replacement, instring)
-    return result
+    match = re.search(pattern, input_string)
+
+    if match:
+        # Extract the matched groups
+        before_keyword = match.group(1)
+        after_keyword = input_string[match.end(2):]
+        number = int(match.group(3)) if match.group(3) else 1
+
+        return before_keyword, after_keyword, number
+
+    # Return None if the keyword is not found
+    return None
+
 
 #TODO add terms  terms implicit (singleM, interM, fullM)
 def formula_regression(df, y_name, formula_elements,p_val=0.05):
@@ -145,6 +151,14 @@ def formula_regression(df, y_name, formula_elements,p_val=0.05):
     #get the inputs
     words = [col for col in df.columns if col != y_name]
     #get all possible combinations up to degree M to create the formula
+    
+    for element in formula_elements:
+        
+        while True:
+            match = keyword_match(element, "single")
+            if comb == None:
+                comb.extend([element])
+    
     #comb = word_multiplicator(words,M)
 
     #comb = word_interactor(words,M)
