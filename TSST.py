@@ -29,6 +29,8 @@ def word_multiplicator_backend(string,words,M,comb):
 
 def word_multiplicator(words,M=2):
     'returns all possible products with words up to degree M.'
+    if M==1:
+        return words
     comb=[]
     words_copy=words.copy()
     for word in words:
@@ -62,6 +64,19 @@ def word_interactor(words,M=2):
         word_interactor_backend(word,words_copy,M-1,comb)
     return comb
 
+def word_squarer(words,M=1):
+    'returns all squares of words from 1 to the degree M.'
+    [[str(word)+"**"+str(i+1) for word in words] for i in range(M)]
+    comb=[]
+    for word in words:
+        for i in range(M):
+            if i == 0:
+                comb.append(str(word))
+            else:
+                comb.append(str(word)+"**"+str(i+1))
+    return comb
+
+
 def regression_fit(df, y_name, comb, p_val=0.05):
     '''
     \nreturns a fitted regression of the df using y_name as output and the formula of comb elements.
@@ -84,21 +99,22 @@ def regression_fit(df, y_name, comb, p_val=0.05):
             return fit
         
         #remove component with highest p-value
+        #print(fit.pvalues,comb[fit.pvalues.argmax()-1])
+        if np.isnan(fit.pvalues.max()):
+            raise Exception("Regression was unsuccesful: p-Values are None\nPlease revise your formula") 
         print("Removing %s wit highest p-Value of:%f"%(comb[fit.pvalues.argmax()-1],fit.pvalues.max()))
+
         comb.remove(comb[fit.pvalues.argmax()-1])
 
-
-
-#TODO add terms explict , terms implicit (singleM, interM, fullM)  seperate function for implicit
 def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
     '''
     \nreturns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
-    \ncomponents with p-value > 0.05 are gradually discarded.
+ components with p-value > 0.05 are gradually discarded.
     
     \nExample:
-    \nMult_M_regression(df, 'a', extend_terms=["np.log(b)","2**b"])
-    \nwith df columns ["a","b","c"] will result in the following first regression function
-    \na ~ +I(b)+I(b*b)+I(b*c)+I(c)+I(c*c)+I(np.log(b))+I(2**b)
+ Mult_M_regression(df, 'a', extend_terms=["np.log(b)","2**b"])
+ with df columns ["a","b","c"] will result in the following first regression function:
+    \n a ~ +I(b)+I(b*b)+I(b*c)+I(c)+I(c*c)+I(np.log(b))+I(2**b)
     '''
 
     #get the inputs
@@ -114,60 +130,109 @@ def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
     return regression_fit(df, y_name, comb, p_val=p_val)
 
 
-def keyword_match(input_string, keyword):
+def keyword_match(input_string, keyword, defaultM=1):
     '''
     \nsearch input_string for keywordN and return [string[:keyword],string[keyword:],N]
     '''
-
+    #set the filter
     pattern = re.compile(f'(.*?)({re.escape(keyword)}(\d+)?)')
 
+    #search for the first instance of the keyword
     match = re.search(pattern, input_string)
 
+    #if a match is found
     if match:
         # Extract the matched groups
         before_keyword = match.group(1)
         after_keyword = input_string[match.end(2):]
-        number = int(match.group(3)) if match.group(3) else 1
+        number = int(match.group(3)) if match.group(3) else defaultM
 
         return before_keyword, after_keyword, number
 
     # Return None if the keyword is not found
     return None
 
-
-#TODO add terms  terms implicit (singleM, interM, fullM)
-def formula_regression(df, y_name, formula_elements,p_val=0.05):
+def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single", inter="inter", full="full"):
     '''
-    \nreturns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
-    \ncomponents with p-value > 0.05 are gradually discarded.
+    \nreturns a fitted regression of the df using y_name as output. The formula is derived from formula_elements.
+ components with p-value > 0.05 are gradually discarded.
+
+    \nEach element of formula_elements is used as a part of the regression function. The keywords singleM, interM, and fullM (with M beeing a number) are replaced by:
+    singleM: col_names**range(M)
+    interM: interaction between all col_names up to degree M
+    fullM: full quadratic (M-fold) model
     
     \nExample:
-    \nMult_M_regression(df, 'a', extend_terms=["np.log(b)","2**b"])
-    \nwith df columns ["a","b","c"] will result in the following first regression function
-    \na ~ +I(b)+I(b*b)+I(b*c)+I(c)+I(c*c)+I(np.log(b))+I(2**b)
+ formula_regression(df_scal, "a", ["inter2**single1","np.log(full2)","c**5*a"])
+ with df columns ["a","b","c"] will result in the following first regression function:
+    \n a ~ +I((b)**(b))+I((b*c)**(b))+I((c)**(b))+I((b)**(c))+I((b*c)**(c))+I((c)**(c))+I(np.log((b)))+I(np.log((b*b)))+I(np.log((b*c)))+I(np.log((c)))+I(np.log((c*c)))+I(c**5*a)
+    \n
+    \nPlease note that the formula can grow to completely ridiculus lenghts when using this function. Be mindfull when using it and dont do stupid shit like shown in this example.
     '''
-    #TODO write new description
     comb=[]
     #get the inputs
     words = [col for col in df.columns if col != y_name]
     #get all possible combinations up to degree M to create the formula
     
+    #pain and suffering x3
+    single_replaced = []
     for element in formula_elements:
         
+        element_insert = [element]
         while True:
-            match = keyword_match(element, "single")
-            if comb == None:
-                comb.extend([element])
+            inserter=[]
+            for ele in element_insert:
+                
+                match = keyword_match(ele, single)
+                if match == None:
+                    single_replaced.extend([ele])
+                    continue
+
+                for instert in word_squarer(words, match[2]):
+                    inserter.append(match[0]+"("+instert+")"+match[1])
+            if element_insert == inserter:
+                break
+            element_insert=inserter
+
+    inter_replaced=[]
+    for element in single_replaced:
+        element_insert = [element]
+        while True:
+            inserter=[]
+            for ele in element_insert:
+                
+                match = keyword_match(ele, inter,defaultM=2)
+                if match == None:
+                    inter_replaced.extend([ele])
+                    continue
+
+                for instert in word_interactor(words, match[2]):
+                    inserter.append(match[0]+"("+instert+")"+match[1])
+            if element_insert == inserter:
+                break
+            element_insert=inserter
     
-    #comb = word_multiplicator(words,M)
+    for element in inter_replaced:
+        element_insert = [element]
+        while True:
+            inserter=[]
+            for ele in element_insert:
+                
+                match = keyword_match(ele, full,defaultM=2)
+                if match == None:
+                    comb.extend([ele])
+                    continue
 
-    #comb = word_interactor(words,M)
+                for instert in word_multiplicator(words, match[2]):
+                    inserter.append(match[0]+"("+instert+")"+match[1])
+            if element_insert == inserter:
+                break
+            element_insert=inserter
 
-    comb.extend(extend_terms)
-
+    #pass to comb and input to regression_fit
     return regression_fit(df, y_name, comb, p_val=p_val)
 
-class ExcludingScaler():
+class ExcludingStdScaler():
     '''
     Scaler with (X - X.mean)/X.std\n
     The Scaler ignores the given column.\n
@@ -247,13 +312,15 @@ class ExcludingScaler():
         return X_transformed
 
 
-
 def stder(X, exclude_col=None, ddof=1):
     '''
     creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
     returns the fitted values and the scaler.
     '''
-    scaler = ExcludingScaler(exclude_col,ddof=1)
+    scaler = ExcludingStdScaler(exclude_col,ddof=1)
     fitted = scaler.fit(X)
     x_std = fitted.std(X)
     return x_std, fitted
+
+
+#TODO ExcludingNormScaler and normer   {'a': -1,'b': -2} for custom min and max

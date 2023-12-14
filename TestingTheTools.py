@@ -36,14 +36,19 @@ liste.extend([])
 print(liste)
 
 
-print(keyword_match("single**2+single3", "single"))
+print(TT.keyword_match("single**2+single1", "single"))
 
+result = TT.Mult_M_regression(df_scal, 'a',M=4)#, extend_terms=["np.log(b)","2**b"])
 
+print(result.summary())
 
+#result =TT.formula_regression(df_scal, "a", ["inter2**single1","np.log(full2+5)","c**5*a","b"])
 
-#TT.formula_regression(df_scal, "a", ["single2**2+single3","full","abc"])
+something_stupid=result =TT.formula_regression(df_scal, "a", ["full3**full3"])
 
+print(result.summary())
 
+print(range(0))
 
 exit()
 
