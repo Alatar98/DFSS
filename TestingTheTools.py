@@ -18,7 +18,17 @@ regress = pd.DataFrame({'a': np.reshape(data['Cp'], -1),
                         'c': np.reshape(data['T'], -1)})
 
 
-df_scal, scaler = TT.stder(regress,'a')
+print(regress.min())
+print(regress.max())
+
+
+df_scal, scaler = TT.normer(regress,'a',min_val={'b': 0},max_val={'b': 100})
+
+print(df_scal)
+
+print(scaler.rev(df_scal))
+
+exit()
 
 result = TT.Mult_M_regression(df_scal, 'a')#, extend_terms=["np.log(b)","2**b"])
 

@@ -275,7 +275,7 @@ class ExcludingStdScaler():
 
         return self
 
-    def std(self, X):
+    def scl(self, X):
         if self.exclude_col is not None and self.exclude_col in X.columns:
             # Exclude the specified column
             X_to_scale = X.drop(self.exclude_col, axis=1)
@@ -317,10 +317,96 @@ def stder(X, exclude_col=None, ddof=1):
     creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
     returns the fitted values and the scaler.
     '''
-    scaler = ExcludingStdScaler(exclude_col,ddof=1)
+    scaler = ExcludingStdScaler(exclude_col,ddof=ddof)
     fitted = scaler.fit(X)
-    x_std = fitted.std(X)
+    x_std = fitted.scl(X)
     return x_std, fitted
 
 
 #TODO ExcludingNormScaler and normer   {'a': -1,'b': -2} for custom min and max
+
+class ExcludingNormScaler():  #MinMaxScaler????
+    '''
+    Scaler with (X - X.min)/(X.max-X.min)\n
+    The Scaler ignores the given column.\n
+    std has a ddof option.\n
+    the scaler has the functions:\n
+    fit to fit the scaler\n
+    std to transform the given data\n
+    rev to inverse_transfomr the given data
+    '''
+    def __init__(self, exclude_col=None, min_val={}, max_val={}, **kwargs):
+        self.exclude_col = exclude_col
+        self.min_val_orig=min_val
+        self.max_val_orig=max_val
+
+
+    def fit(self, X):
+         # check for the specified column
+        if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Exclude the specified column
+            X_to_fit = X.drop(self.exclude_col, axis=1)
+        else:
+            # No column to exclude, simply fit
+            X_to_fit = X.copy()
+
+        #TODO check if the init overwrite works
+        #get min and max values
+        self.min_val = X_to_fit.min()
+        self.max_val = X_to_fit.max()
+        #if min or max values where given at init overwrite the calculated values with the given ones
+        for key in self.min_val.index:
+            if key in self.min_val_orig:
+                self.min_val[key] = self.min_val_orig[key]
+
+            if key in self.max_val_orig:
+                self.max_val[key] = self.max_val_orig[key]
+
+        return self
+
+    def scl(self, X):
+        if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Exclude the specified column
+            X_to_scale = X.drop(self.exclude_col, axis=1)
+        
+        else:
+            # No column to exclude, simply apply standardization
+            X_to_scale = X
+
+        # Transform the Data
+        X_transformed = (X_to_scale - self.min_val)/(self.max_val-self.min_val)
+
+        if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Add the column back to the DataFrame
+            X_transformed.insert(0, self.exclude_col, X[self.exclude_col])
+
+        return X_transformed
+    
+    def rev(self, X):
+        if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Exclude the specified column
+            X_to_scale = X.drop(self.exclude_col, axis=1)
+        
+        else:
+            # No column to exclude, simply apply standardization
+            X_to_scale = X
+
+        # Transform the Data
+        X_transformed = X_to_scale * (self.max_val-self.min_val)  + self.min_val
+
+        if self.exclude_col is not None and self.exclude_col in X.columns:
+            # Add the column back to the DataFrame
+            X_transformed.insert(0, self.exclude_col, X[self.exclude_col])
+
+        return X_transformed
+
+
+def normer(X, exclude_col=None, min_val={}, max_val={}):
+    '''
+    creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
+    returns the fitted values and the scaler.
+    '''
+    scaler = ExcludingNormScaler(exclude_col,min_val=min_val, max_val=max_val)
+    fitted = scaler.fit(X)
+    x_std = fitted.scl(X)
+    return x_std, fitted
