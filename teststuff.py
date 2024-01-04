@@ -6,6 +6,41 @@ import TSST as TT
 
 
 
+from sympy import Symbol 
+
+x=Symbol('x') 
+y=Symbol('y') 
+expr=x**2+y**2
+print(expr)
+
+
+from sympy import symbols, sympify
+
+def get_sympy_expression(formula_str, variable_names):
+    # Create Symbol objects from variable names
+    symbols_list = symbols(variable_names)
+
+    # Build the expression using the formula string
+    expression = sympify(formula_str)
+
+    # Replace any variable names in the expression with the corresponding symbols
+    for var_name, var_symbol in zip(variable_names, symbols_list):
+        expression = expression.subs(var_name, var_symbol)
+
+    return expression
+
+# Example usage:
+formula = "a*x**2 + b*x + c"
+variables = ['a', 'b', 'x']
+
+result = get_sympy_expression(formula, variables)
+print(result)
+
+
+
+
+exit()
+
 data = {'A': [1, 2, 3, 4, 5],
         'B': [10, 20, 30, 40, 50],
         'C': [100, 200, 300, 400, 500]}
