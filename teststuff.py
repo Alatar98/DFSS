@@ -5,6 +5,85 @@ from  statsmodels.formula.api import ols
 import TSST as TT
 
 
+import numpy as np
+import scipy.stats as stats
+from sympy import symbols, sympify
+
+import sympy as syms
+
+
+GAMMA = 0.95
+
+# Data according to problem
+x_0 = 50
+x_tol = 0.01
+x_sig = x_tol/np.sqrt(12)
+y_0 = 30
+y_tol = 0.01
+y_sig = y_tol/np.sqrt(12)
+
+# Definition of symbolic variables and function
+x_sym, y_sym = syms.symbols('x_sym, y_sym')
+#z_sym = syms.sqrt(x_sym**2 + y_sym**2)
+z_sym = (x_sym**2 + y_sym**2)**0.5
+
+# Symbolic calculation of sensitivities
+e_x_sym = z_sym.diff(x_sym)
+e_y_sym = z_sym.diff(y_sym)
+
+
+# Substitute symbols by values, numeric calculation of sensitivities
+values = {x_sym: x_0, y_sym: y_0}
+e_x = float(e_x_sym.evalf(subs=values))
+e_y = float(e_y_sym.evalf(subs=values))
+
+print("Toleranzbereich bei central limit?: ",np.sqrt(e_x**2*x_tol**2+e_y**2*y_tol**2))
+
+# Resolution of distance
+DZ = 0.00001
+
+# Propability density functions
+z_x_min = - 5*x_sig*np.abs(e_x)
+z_x_max = + 5*x_sig*np.abs(e_x)
+z_x = np.arange(z_x_min, z_x_max+DZ, DZ)
+f_x = stats.uniform.pdf(z_x, x_tol/2*np.abs(e_x), x_tol*np.abs(e_x))
+
+print(len(f_x))
+print(stats.uniform.pdf(z_x_max, x_tol/2*np.abs(e_x), x_tol*np.abs(e_x)))
+print(stats.uniform.pdf(z_x_max, loc=x_tol/2*np.abs(e_x), scale=x_tol*np.abs(e_x)))
+print(stats.uniform.pdf(z_x_max))
+print(x_tol/2*np.abs(e_x))
+print(x_tol*np.abs(e_x))
+
+
+# Propability density functions
+z_y_min = - 5*y_sig*np.abs(e_y)
+z_y_max = + 5*y_sig*np.abs(e_y)
+z_y = np.arange(z_y_min, z_y_max+DZ, DZ)
+f_y = stats.uniform.pdf(z_y, y_tol/2*np.abs(e_y), y_tol*np.abs(e_y))
+
+# Convolute propability density functions
+f12 = np.convolve(f_x, f_y)*DZ
+z12_min = z_x_min + z_y_min
+z12_max = z_x_max + z_y_max
+z12 = np.arange(z12_min, z12_max+DZ, DZ)
+
+# Determin cumulative density function
+F12 = np.cumsum(f12)*DZ
+F12 = F12/np.max(F12)
+
+# Berechnung der Toleranzgrenzen über Ausfallwahrscheinlichkeiten
+indexmin = np.min(np.where(F12 >= (1-GAMMA)/2))
+indexmax = np.min(np.where(F12 >= (1+GAMMA)/2))
+z_maxCon = z12[indexmax]
+z_minCon = z12[indexmin]
+z_tolerance_con = z_maxCon - z_minCon
+print(' ')
+print('Toleranzbereich bei Faltung =', round(z_tolerance_con, 5))
+
+
+
+exit()
 
 from sympy import Symbol 
 
