@@ -4,11 +4,59 @@ import numpy as np
 import pandas as pd
 from  statsmodels.formula.api import ols
 from scipy.io import loadmat
+import scipy.stats as stats
+import matplotlib.pyplot as plt
 
 import re
 
 import TSST as TT
 
+
+GAMMA = 0.95
+
+# Data according to problem
+x_0 = 50
+x_tol = 0.01
+x_sig = x_tol/np.sqrt(12)
+y_0 = 30
+y_tol = 0.01
+y_sig = y_tol/np.sqrt(12)
+
+# Resolution of distance
+DZ = 0.00001
+
+
+
+probab={"x": stats.uniform(loc=x_0-(x_tol/2),scale=x_tol),
+        "y": stats.uniform(loc=y_0-(y_tol/2),scale=y_tol)}
+
+conv, x =TT.conv(probab,"(x**2 + y**2)**0.5",res=DZ)
+
+
+
+
+ax1 = plt.figure(1, figsize=(6, 4)).subplots(1, 1)
+
+ax1.plot(x, conv)
+
+
+
+##############NEW FUNC
+
+# Determin cumulative density function
+F12 = np.cumsum(conv)
+
+# Berechnung der Toleranzgrenzen über Ausfallwahrscheinlichkeiten
+indexmin = np.min(np.where(F12 >= (1-GAMMA)/2))
+indexmax = np.min(np.where(F12 >= (1+GAMMA)/2))
+z_maxCon = x[indexmax]
+z_minCon = x[indexmin]
+z_tolerance_con = z_maxCon - z_minCon
+
+print(z_tolerance_con)
+
+
+exit()
 
 data = loadmat('Feuchtesensor')
 regress = pd.DataFrame({'a': np.reshape(data['Cp'], -1),

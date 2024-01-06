@@ -12,6 +12,11 @@ import pandas as pd
 from  statsmodels.formula.api import ols
 import re
 
+import scipy.stats as stats
+from sympy import symbols, sympify
+import sympy as syms
+
+
 from sklearn.preprocessing import StandardScaler
 
 
@@ -410,3 +415,69 @@ def normer(X, exclude_col=None, min_val={}, max_val={}):
     fitted = scaler.fit(X)
     x_std = fitted.scl(X)
     return x_std, fitted
+
+
+
+
+def conv(prob, formula_str, res, x_scaler=5):
+    '''
+    Parameters
+    ----------
+    \nprob : {"name": scipy.stats.rv_continous}
+        names and distributions of the formula components
+    \nformula_str : string
+        the formula
+    \nres : Number
+        resolution of the convolution
+    \nx_scaler: Number, optional The default is 5.
+        size of the x axis is 2 * x_scaler * std_dev * local_sensitivity
+
+    Returns
+    -------
+    conv_y, conv_x
+    convolution propability density function and x values of the convolution
+    '''
+    
+    #get list of names
+    names_list=list(prob.keys())
+    
+    means={k: v.mean() for k, v in prob.items()}
+    stds={k: v.std() for k, v in prob.items()}
+    
+    # Create Symbol objects from variable names
+    symbols_list = symbols(names_list)
+
+    # Build the expression using the formula string
+    expression = sympify(formula_str)
+
+    # Replace any variable names in the expression with the corresponding symbols
+    for var_name, var_symbol in zip(names_list, symbols_list):
+        expression = expression.subs(var_name, var_symbol)
+     
+    
+    #calculation of sensitivities
+    sens={}
+    for name in names_list:
+        sens[name] = expression.diff(name).evalf(subs=means)
+
+    #calculate propability density functions
+    pdfs={}
+    w_ges=0
+    for name in names_list:
+        w = np.abs(5*stds[name]*sens[name])
+        w_ges+=w
+        scaled_ax = np.array(np.arange(-w, w, res)/sens[name]+means[name], dtype=np.float64)
+
+        pdfs[name]=prob[name].pdf(scaled_ax)
+
+        
+    #convolute
+    conv=[1]   #/res  to make it constant but canceled out by /np.max later
+    for name in names_list:
+        conv=np.convolve(conv, pdfs[name])
+
+    cdf = np.cumsum(conv)
+    conv = conv/np.max(cdf)
+    
+    return conv, np.arange(-w_ges, w_ges, res)
+    

@@ -1,3 +1,4 @@
+%matplotlib inline
 # -*- coding: utf-8 -*-
 
 """ Musterlösung zur Klausur Design For Six Sigma WS 2022/23

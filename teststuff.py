@@ -1,3 +1,4 @@
+#%matplotlib inline
 import numpy as np
 import pandas as pd
 from  statsmodels.formula.api import ols
@@ -11,6 +12,8 @@ from sympy import symbols, sympify
 
 import sympy as syms
 
+import matplotlib.pyplot as plt
+
 
 GAMMA = 0.95
 
@@ -21,6 +24,9 @@ x_sig = x_tol/np.sqrt(12)
 y_0 = 30
 y_tol = 0.01
 y_sig = y_tol/np.sqrt(12)
+
+RHO_0 = 7.850e-3
+RHO_SIG = 0.05e-3/6
 
 # Definition of symbolic variables and function
 x_sym, y_sym = syms.symbols('x_sym, y_sym')
@@ -37,7 +43,9 @@ values = {x_sym: x_0, y_sym: y_0}
 e_x = float(e_x_sym.evalf(subs=values))
 e_y = float(e_y_sym.evalf(subs=values))
 
-print("Toleranzbereich bei central limit?: ",np.sqrt(e_x**2*x_tol**2+e_y**2*y_tol**2))
+print(e_x,e_y)
+
+print("Toleranzbereich bei central limit?: ",np.sqrt(e_x**2*x_sig**2+e_y**2*y_sig**2))
 
 # Resolution of distance
 DZ = 0.00001
@@ -46,21 +54,19 @@ DZ = 0.00001
 z_x_min = - 5*x_sig*np.abs(e_x)
 z_x_max = + 5*x_sig*np.abs(e_x)
 z_x = np.arange(z_x_min, z_x_max+DZ, DZ)
-f_x = stats.uniform.pdf(z_x, x_tol/2*np.abs(e_x), x_tol*np.abs(e_x))
-
-print(len(f_x))
-print(stats.uniform.pdf(z_x_max, x_tol/2*np.abs(e_x), x_tol*np.abs(e_x)))
-print(stats.uniform.pdf(z_x_max, loc=x_tol/2*np.abs(e_x), scale=x_tol*np.abs(e_x)))
-print(stats.uniform.pdf(z_x_max))
-print(x_tol/2*np.abs(e_x))
-print(x_tol*np.abs(e_x))
+f_x = stats.uniform.pdf(z_x, -x_tol/2*np.abs(e_x), x_tol*np.abs(e_x))
 
 
 # Propability density functions
 z_y_min = - 5*y_sig*np.abs(e_y)
 z_y_max = + 5*y_sig*np.abs(e_y)
 z_y = np.arange(z_y_min, z_y_max+DZ, DZ)
-f_y = stats.uniform.pdf(z_y, y_tol/2*np.abs(e_y), y_tol*np.abs(e_y))
+f_y = stats.uniform.pdf(z_y, -y_tol/2*np.abs(e_y), y_tol*np.abs(e_y))
+
+#h_H_min = - 5*H_SIG*np.abs(e_H)
+#h_H_max = 5*H_SIG*np.abs(e_H)
+#h_H = np.arange(h_H_min, h_H_max+DH, DH)
+#f_H = norm.pdf(h_H, 0, np.abs(e_H*H_SIG))
 
 # Convolute propability density functions
 f12 = np.convolve(f_x, f_y)*DZ
@@ -79,11 +85,12 @@ z_maxCon = z12[indexmax]
 z_minCon = z12[indexmin]
 z_tolerance_con = z_maxCon - z_minCon
 print(' ')
-print('Toleranzbereich bei Faltung =', round(z_tolerance_con, 5))
+print('Toleranzbereich bei Faltung =', z_tolerance_con)
 
 
 
 exit()
+
 
 from sympy import Symbol 
 
