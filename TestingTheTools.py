@@ -12,26 +12,37 @@ import re
 import TSST as TT
 
 
-GAMMA = 0.95
+print("Toleranzbereich bei Faltung Lösung = 0.00957")
+
+
 
 # Data according to problem
-x_0 = 50
-x_tol = 0.01
-x_sig = x_tol/np.sqrt(12)
-y_0 = 30
-y_tol = 0.01
-y_sig = y_tol/np.sqrt(12)
+ROH_0 = 7.850e-3
+ROH_SIG = 0.05e-3/6
 
-# Resolution of distance
-DZ = 0.00001
+E_0 = 210e3
+E_SIG = 5e3/6
+
+L_0 = 52
+L_TOL = 0.4
+L_MIN = 52 - L_TOL/2
+L_MAX = 52 + L_TOL/2
+L_SIG = L_TOL/np.sqrt(12)
+
+H_0 = 2
+H_SIG = 0.02/6
+
+GAMMA = 0.99
+
+DH = 0.00001
 
 
+probab={"roh": stats.norm(loc=ROH_0,scale=ROH_SIG),
+        "H": stats.norm(loc=H_0,scale=H_SIG),
+        "E": stats.norm(loc=E_0,scale=E_SIG),
+        "L": stats.uniform(loc=L_MIN,scale=L_TOL)}
 
-probab={"x": stats.uniform(loc=x_0-(x_tol/2),scale=x_tol),
-        "y": stats.uniform(loc=y_0-(y_tol/2),scale=y_tol)}
-
-conv, x =TT.conv(probab,"(x**2 + y**2)**0.5",res=DZ)
-
+conv, x =TT.conv(probab,"3 * roh * L**4 / E / H**2",res=DH)
 
 
 
@@ -53,6 +64,53 @@ z_maxCon = x[indexmax]
 z_minCon = x[indexmin]
 z_tolerance_con = z_maxCon - z_minCon
 
+print(z_tolerance_con)
+
+
+
+
+
+
+GAMMA = 0.95
+
+# Data according to problem
+x_0 = 50
+x_tol = 0.01
+x_sig = x_tol/np.sqrt(12)
+y_0 = 30
+y_tol = 0.01
+y_sig = y_tol/np.sqrt(12)
+
+# Resolution of distance
+DZ = 0.00001
+
+
+
+probab={"x": stats.uniform(loc=x_0-(x_tol/2),scale=x_tol),
+        "y": stats.uniform(loc=y_0-(y_tol/2),scale=y_tol)}
+
+conv, x =TT.conv(probab,"(x**2 + y**2)**0.5",res=DZ)
+
+
+ax1 = plt.figure(1, figsize=(6, 4)).subplots(1, 1)
+
+ax1.plot(x, conv)
+
+
+
+##############NEW FUNC
+
+# Determin cumulative density function
+F12 = np.cumsum(conv)
+
+# Berechnung der Toleranzgrenzen über Ausfallwahrscheinlichkeiten
+indexmin = np.min(np.where(F12 >= (1-GAMMA)/2))
+indexmax = np.min(np.where(F12 >= (1+GAMMA)/2))
+z_maxCon = x[indexmax]
+z_minCon = x[indexmin]
+z_tolerance_con = z_maxCon - z_minCon
+
+print("Toleranzbereich bei Faltung Lösung = 0.010759999999999562")
 print(z_tolerance_con)
 
 

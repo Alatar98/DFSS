@@ -438,9 +438,14 @@ def conv(prob, formula_str, res, x_scaler=5):
     convolution propability density function and x values of the convolution
     '''
     
-    #get list of names
-    names_list=list(prob.keys())
-    
+    #get list of names and prefix _ to all names to avoid convusion with predefined symbols
+    names_list_orig=list(prob.keys())
+    names_list = ['_'+name for name in names_list_orig]
+    prob = {'_'+k: v for k, v in prob.items()}
+    for name in names_list_orig:
+        formula_str=formula_str.replace(name,'_'+name)
+
+    #get means and std
     means={k: v.mean() for k, v in prob.items()}
     stds={k: v.std() for k, v in prob.items()}
     
@@ -450,11 +455,12 @@ def conv(prob, formula_str, res, x_scaler=5):
     # Build the expression using the formula string
     expression = sympify(formula_str)
 
+
     # Replace any variable names in the expression with the corresponding symbols
     for var_name, var_symbol in zip(names_list, symbols_list):
         expression = expression.subs(var_name, var_symbol)
      
-    
+
     #calculation of sensitivities
     sens={}
     for name in names_list:
@@ -464,7 +470,7 @@ def conv(prob, formula_str, res, x_scaler=5):
     pdfs={}
     w_ges=0
     for name in names_list:
-        w = np.abs(5*stds[name]*sens[name])
+        w = float(np.abs(5*stds[name]*sens[name]))
         w_ges+=w
         scaled_ax = np.array(np.arange(-w, w, res)/sens[name]+means[name], dtype=np.float64)
 
@@ -478,6 +484,6 @@ def conv(prob, formula_str, res, x_scaler=5):
 
     cdf = np.cumsum(conv)
     conv = conv/np.max(cdf)
-    
-    return conv, np.arange(-w_ges, w_ges, res)
+
+    return conv, np.linspace(-w_ges, w_ges, len(conv))
     
