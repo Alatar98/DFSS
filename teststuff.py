@@ -76,6 +76,7 @@ z12 = np.arange(z12_min, z12_max+DZ, DZ)
 
 # Determin cumulative density function
 F12 = np.cumsum(f12)*DZ
+print("cumsum: ", np.max(F12))
 F12 = F12/np.max(F12)
 
 # Berechnung der Toleranzgrenzen über Ausfallwahrscheinlichkeiten

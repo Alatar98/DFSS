@@ -419,7 +419,7 @@ def normer(X, exclude_col=None, min_val={}, max_val={}):
 
 
 
-def conv(prob, formula_str, res, x_scaler=5):
+def conv(prob, formula_str, res, x_scaler=5, verbose=False):
     '''
     Parameters
     ----------
@@ -454,7 +454,12 @@ def conv(prob, formula_str, res, x_scaler=5):
 
     # Build the expression using the formula string
     expression = sympify(formula_str)
-
+    
+    #if verbose is set print the symbols and expression
+    if verbose:
+        print("symbols: ",symbols_list)
+        print("expression: ",expression)
+        
 
     # Replace any variable names in the expression with the corresponding symbols
     for var_name, var_symbol in zip(names_list, symbols_list):
@@ -464,18 +469,25 @@ def conv(prob, formula_str, res, x_scaler=5):
     #calculation of sensitivities
     sens={}
     for name in names_list:
-        sens[name] = expression.diff(name).evalf(subs=means)
+        sens[name] = abs(float(expression.diff(name).evalf(subs=means)))
+        
+    #if verbose is set print the sensitivities
+    if verbose:
+        print("sensitivities: ",sens)
 
     #calculate propability density functions
     pdfs={}
     w_ges=0
     for name in names_list:
-        w = float(np.abs(5*stds[name]*sens[name]))
+        w = float(np.abs(x_scaler*stds[name]*sens[name]))
         w_ges+=w
         scaled_ax = np.array(np.arange(-w, w, res)/sens[name]+means[name], dtype=np.float64)
 
         pdfs[name]=prob[name].pdf(scaled_ax)
-
+        
+    #if verbose is set print the lenght of the pdfs
+    if verbose:
+        print("pdf_lenght: ",{key:len(pdf) for key,pdf in pdfs.items()})
         
     #convolute
     conv=[1]   #/res  to make it constant but canceled out by /np.max later
@@ -484,6 +496,14 @@ def conv(prob, formula_str, res, x_scaler=5):
 
     cdf = np.cumsum(conv)
     conv = conv/np.max(cdf)
+    
+    #if verbose is set print the sum of all objects. this value should be close to one
+    if verbose:
+        man_scaling_check=np.max(cdf)*res**(len(names_list))
+        for sens in sens.values():
+            man_scaling_check=man_scaling_check/sens
+        print("cumsum: ",man_scaling_check)
+    
 
     return conv, np.linspace(-w_ges, w_ges, len(conv))
     

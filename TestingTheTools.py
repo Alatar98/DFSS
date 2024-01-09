@@ -34,7 +34,7 @@ H_SIG = 0.02/6
 
 GAMMA = 0.99
 
-DH = 0.00001
+DH = 0.000001
 
 
 probab={"roh": stats.norm(loc=ROH_0,scale=ROH_SIG),
@@ -42,13 +42,15 @@ probab={"roh": stats.norm(loc=ROH_0,scale=ROH_SIG),
         "E": stats.norm(loc=E_0,scale=E_SIG),
         "L": stats.uniform(loc=L_MIN,scale=L_TOL)}
 
-conv, x =TT.conv(probab,"3 * roh * L**4 / E / H**2",res=DH)
+conv, x =TT.conv(probab,"3 * roh * L**4 / E / H**2",res=DH,verbose=True)
 
 
 
 ax1 = plt.figure(1, figsize=(6, 4)).subplots(1, 1)
 
 ax1.plot(x, conv)
+
+
 
 
 
@@ -60,16 +62,22 @@ F12 = np.cumsum(conv)
 # Berechnung der Toleranzgrenzen über Ausfallwahrscheinlichkeiten
 indexmin = np.min(np.where(F12 >= (1-GAMMA)/2))
 indexmax = np.min(np.where(F12 >= (1+GAMMA)/2))
+
 z_maxCon = x[indexmax]
 z_minCon = x[indexmin]
 z_tolerance_con = z_maxCon - z_minCon
 
 print(z_tolerance_con)
 
+middle=np.min(np.where(F12 >= 0.5))
+middle2=np.max(np.where(F12 <= 0.5))
+print("middle: ",middle,"middle: ",middle2,"  real_middle:",len(x)/2)
+print("middle: ",x[middle],"middle: ",x[middle2],"  real_middle:",len(x)/2)
 
 
 
 
+print("Toleranzbereich bei Faltung Lösung = 0.010759999999999562")
 
 GAMMA = 0.95
 
@@ -89,7 +97,7 @@ DZ = 0.00001
 probab={"x": stats.uniform(loc=x_0-(x_tol/2),scale=x_tol),
         "y": stats.uniform(loc=y_0-(y_tol/2),scale=y_tol)}
 
-conv, x =TT.conv(probab,"(x**2 + y**2)**0.5",res=DZ)
+conv, x =TT.conv(probab,"(x**2 + y**2)**0.5",res=DZ,verbose=True)
 
 
 ax1 = plt.figure(1, figsize=(6, 4)).subplots(1, 1)
@@ -110,8 +118,15 @@ z_maxCon = x[indexmax]
 z_minCon = x[indexmin]
 z_tolerance_con = z_maxCon - z_minCon
 
-print("Toleranzbereich bei Faltung Lösung = 0.010759999999999562")
+
 print(z_tolerance_con)
+
+middle=np.min(np.where(F12 >= 0.5))
+middle2=np.max(np.where(F12 <= 0.5))
+print("middle: ",middle,"middle: ",middle2,"  real_middle:",len(x)/2)
+print("middle: ",x[middle],"middle: ",x[middle2],"  real_middle:",len(x)/2)
+
+
 
 
 exit()
