@@ -502,7 +502,9 @@ def conv(prob, formula_str, res, x_scaler=5, verbose=False):
     
     #if verbose is set print the sum of all objects. this value should be close to one
     if verbose:
+        #add the scaling that is normally done during convolution and cumsum
         man_scaling_check=np.max(cdf)*res**(len(names_list))
+        #add the scaling that results from changing the x axis  instead of the stdev when generating the pdfs
         for sens in sens.values():
             man_scaling_check=man_scaling_check/sens
         print("cumsum: ",man_scaling_check)
