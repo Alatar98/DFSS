@@ -511,4 +511,15 @@ def conv(prob, formula_str, res, x_scaler=5, verbose=False):
     
 
     return conv, np.linspace(-w_ges, w_ges, len(conv))
+
+
+
+#TODO: Konfidenzbereiche für Mittelwert und Standardabweichung
+#TODO: Hypothesentest
+#TODO: Data to vert??
+#TODO: Gütefunktion  bigger smaller both
+#TODO: Prognosebereich
+#TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
+#TODO: ? Plots
+
     
