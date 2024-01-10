@@ -82,7 +82,7 @@ def word_squarer(words,M=1):
     return comb
 
 
-def regression_fit(df, y_name, comb, p_val=0.05):
+def regression_fit(df, y_name, comb, p_val=0.05,verbose=False):
     '''
     \nreturns a fitted regression of the df using y_name as output and the formula of comb elements.
     \ncomponents with p-value > p_val are gradually discarded.
@@ -98,6 +98,9 @@ def regression_fit(df, y_name, comb, p_val=0.05):
         model = ols(formula,df)
         fit = model.fit()
         
+        if verbose:
+            print(fit.result())
+        
         #check if regression has no more unnecesary components (return)
         if (fit.pvalues < p_val).all():
             print("Regression done")
@@ -107,11 +110,11 @@ def regression_fit(df, y_name, comb, p_val=0.05):
         #print(fit.pvalues,comb[fit.pvalues.argmax()-1])
         if np.isnan(fit.pvalues.max()):
             raise Exception("Regression was unsuccesful: p-Values are None\nPlease revise your formula") 
+            
         print("Removing %s wit highest p-Value of:%f"%(comb[fit.pvalues.argmax()-1],fit.pvalues.max()))
-
         comb.remove(comb[fit.pvalues.argmax()-1])
 
-def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
+def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05,verbose=False):
     '''
     \nreturns a fitted regression of the df using y_name as output and a full quadatic(M-fold) model of the remaining columns.
  components with p-value > 0.05 are gradually discarded.
@@ -132,7 +135,7 @@ def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05):
 
     comb.extend(extend_terms)
 
-    return regression_fit(df, y_name, comb, p_val=p_val)
+    return regression_fit(df, y_name, comb, p_val=p_val,verbose=verbose)
 
 
 def keyword_match(input_string, keyword, defaultM=1):
@@ -157,7 +160,7 @@ def keyword_match(input_string, keyword, defaultM=1):
     # Return None if the keyword is not found
     return None
 
-def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single", inter="inter", full="full"):
+def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single", inter="inter", full="full",verbose=False):
     '''
     \nreturns a fitted regression of the df using y_name as output. The formula is derived from formula_elements.
  components with p-value > 0.05 are gradually discarded.
@@ -235,7 +238,7 @@ def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single",
             element_insert=inserter
 
     #pass to comb and input to regression_fit
-    return regression_fit(df, y_name, comb, p_val=p_val)
+    return regression_fit(df, y_name, comb, p_val=p_val,verbose=verbose)
 
 class ExcludingStdScaler():
     '''
