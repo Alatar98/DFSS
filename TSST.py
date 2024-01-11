@@ -319,7 +319,6 @@ class ExcludingStdScaler():
 
         return X_transformed
 
-
 def stder(X, exclude_col=None, ddof=1):
     '''
     creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
@@ -330,8 +329,6 @@ def stder(X, exclude_col=None, ddof=1):
     x_std = fitted.scl(X)
     return x_std, fitted
 
-
-#TODO ExcludingNormScaler and normer   {'a': -1,'b': -2} for custom min and max
 
 class ExcludingNormScaler():  #MinMaxScaler????
     '''
@@ -408,7 +405,6 @@ class ExcludingNormScaler():  #MinMaxScaler????
 
         return X_transformed
 
-
 def normer(X, exclude_col=None, min_val={}, max_val={}):
     '''
     creates a ExcludingScaler fitted for X excluding the column exclude_col.\n
@@ -418,7 +414,6 @@ def normer(X, exclude_col=None, min_val={}, max_val={}):
     fitted = scaler.fit(X)
     x_std = fitted.scl(X)
     return x_std, fitted
-
 
 
 
@@ -513,13 +508,119 @@ def conv(prob, formula_str, res, x_scaler=5, verbose=False):
     return conv, np.linspace(-w_ges, w_ges, len(conv))
 
 
+#confidence Range calculation
+def confidenceRange(data, gamma, std=None, verbose=False):
+    '''
+    \nif std is given calculate confidence range of mean of data with gamma and return mu_min, mu_max.
+    \nif std is not given calculate confidence range of mean and std of data with gamma and return mu_min, mu_max, sdev_min, sdev_max.
+    '''
+    #base data
+    m = np.mean(data)
+    s = np.std(data, ddof=1) if std is None else std
+    N=len(data)
 
-#TODO: Konfidenzbereiche für Mittelwert und Standardabweichung
+    # Determine konstants for mean
+    c1 = stats.t.ppf((1-gamma)/2, N-1)
+    c2 = stats.t.ppf((1+gamma)/2, N-1)
+    mu_min = m - ((c2*s)/np.sqrt(N))
+    mu_max = m - ((c1*s)/np.sqrt(N))
+
+    if verbose:
+        if std==None:
+            print("Calculating confidence range with unknown variance:")
+        else:
+            print("Calculating confidence range with known variance:")
+
+        print("c1: ",c1,"   c2: ",c2, "   mu_min: ",mu_min, "   mu_max: ",mu_max)
+
+    if std==None:
+        c1 = stats.chi2.ppf((1-gamma)/2, N-1)
+        c2 = stats.chi2.ppf((1+gamma)/2, N-1)
+        sdev_min = np.sqrt((N-1)/c2)*s
+        sdev_max = np.sqrt((N-1)/c1)*s
+
+        if verbose:
+            print("c1: ",c1,"   c2: ",c2, "   sdev_min: ",sdev_min, "   sdev_max: ",sdev_max)
+
+        return mu_min, mu_max, sdev_min, sdev_max
+    
+    return mu_min, mu_max
+
+
+#confidence Range for the Comparison of Populations calculation
+def confidenceRangeComp(data1, data2, gamma, std=None, verbose=False):
+    '''
+    \nif std is given calculate confidence range of the difference in mean values with gamma and return dmu_min, dmu_max.
+    \nif std is not given calculate confidence range of  the difference in mean values  and rato s2/s1 of the std values with gamma and return mu_min, mu_max, sdev_min, sdev_max.
+    '''
+    
+    #base data
+    m1 = np.mean(data1)
+    m2 = np.mean(data2)
+    N1=len(data1)
+    N2=len(data2)
+    s1 = np.std(data1, ddof=1) 
+    s2 = np.std(data2, ddof=1) 
+    s = np.sqrt(((N1-1)*s1**2 + N2*s2**2) / (N1+N2-2))  if std is None else std
+
+
+    # Determine konstants for mean
+    c1 = stats.t.ppf((1-gamma)/2, N1+N2-2)
+    c2 = stats.t.ppf((1+gamma)/2, N1+N2-2)
+    dmu_min = m1 - m2 - c2*np.sqrt(1/N1+1/N2)*s
+    dmu_max = m1 - m2 - c1*np.sqrt(1/N1+1/N2)*s
+
+    if verbose:
+        if std==None:
+            print("Calculating confidence range with unknown variance:")
+        else:
+            print("Calculating confidence range with known variance:")
+
+        print("c1: ",c1,"   c2: ",c2, "   dmu_min: ",dmu_min, "   dmu_max: ",dmu_max)
+
+    if std==None:
+        c1 = stats.f.ppf((1-gamma)/2, N1-1, N2-1)
+        c2 = stats.f.ppf((1+gamma)/2, N1-1, N2-1)
+        sdev_ratio_min = s2/s1*c1
+        sdev_ratio_max = s2/s1*c2
+
+        if verbose:
+            print("c1: ",c1,"   c2: ",c2, "   sdev_min: ",sdev_ratio_min, "   sdev_max: ",sdev_ratio_max)
+
+        return dmu_min, dmu_max, sdev_ratio_min, sdev_ratio_max
+    
+    return dmu_min, dmu_max
+
+
+def predictionRange(data,gamma,mean=None,std=None,verbose=False):
+    
+    m = np.mean(data) if mean is None else mean
+    s = np.std(data, ddof=1) if std is None else std
+    N=len(data)
+
+    if mean==None and std==None:
+        range=stats.t.interval(gamma,N-1,loc=m,s=s*np.sqrt(1+1/N))
+    elif std==None:
+        range=stats.t.interval(gamma,N-1,loc=m,s=s)
+    elif mean==None:
+        range=stats.norm.interval(gamma,loc=m,s=s*np.sqrt(1+1/N))
+    else:
+        range=stats.norm.interval(gamma,loc=m,s=s)
+
+    return range
+
+
+#TODO: Change confidenceRange to (range mu),(range std) and use .interval(loc=,scale=)
+#TODO: Prediction Range of Populations
+
 #TODO: Hypothesentest
 #TODO: Data to vert??
 #TODO: Gütefunktion  bigger smaller both
-#TODO: Prognosebereich
 #TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
+#TODO: Correlated Variables
+#TODO: Measurement system analysis
 #TODO: ? Plots
+
+#TODO: list all important distributions: norm uniform t chi chi2 weißbull etc
 
     

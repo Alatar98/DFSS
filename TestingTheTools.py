@@ -12,6 +12,21 @@ import re
 import TSST as TT
 
 
+gamma = 0.95
+
+data = [4.3, 4.5, 4.2, 4.3, 4.3, 4.7, 4.4, 4.2, 4.3, 4.5]
+
+print(TT.confidenceRange(data,gamma,verbose=True))
+
+
+gamma = 0.95
+cap_1 = np.array([140, 132, 136, 142, 138, 150, 150, 154, 152, 136, 144, 142])
+cap_2 = np.array([144, 134, 132, 130, 146, 140, 128, 128, 150, 137, 130, 135])
+
+print(TT.confidenceRangeComp(cap_1,cap_2,gamma,verbose=True))
+
+exit()
+
 print("Toleranzbereich bei Faltung Lösung = 0.00957")
 
 
