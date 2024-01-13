@@ -513,6 +513,8 @@ def confidenceRange(data, gamma, std=None, verbose=False):
     '''
     \nif std is given calculate confidence range of mean of data with gamma and return mu_min, mu_max.
     \nif std is not given calculate confidence range of mean and std of data with gamma and return mu_min, mu_max, sdev_min, sdev_max.
+    \n
+    \nTBH itsprobably better to simply use stats.t.interval(gamma, len(data)-1,loc=np.mean(data),scale=np.std(data,ddof=1)/np.sqrt(len(data))) or simmilar
     '''
     #base data
     m = np.mean(data)
@@ -597,15 +599,16 @@ def predictionRange(data,gamma,mean=None,std=None,verbose=False):
     m = np.mean(data) if mean is None else mean
     s = np.std(data, ddof=1) if std is None else std
     N=len(data)
+    
 
     if mean==None and std==None:
-        range=stats.t.interval(gamma,N-1,loc=m,s=s*np.sqrt(1+1/N))
+        range=stats.t.interval(gamma,N-1,loc=m,scale=s*np.sqrt(1+1/N))
     elif std==None:
-        range=stats.t.interval(gamma,N-1,loc=m,s=s)
+        range=stats.t.interval(gamma,N-1,loc=m,scale=s)
     elif mean==None:
-        range=stats.norm.interval(gamma,loc=m,s=s*np.sqrt(1+1/N))
+        range=stats.norm.interval(gamma,loc=m,scale=s*np.sqrt(1+1/N))
     else:
-        range=stats.norm.interval(gamma,loc=m,s=s)
+        range=stats.norm.interval(gamma,loc=m,scale=s)
 
     return range
 
