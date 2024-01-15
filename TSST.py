@@ -612,17 +612,64 @@ def predictionRange(data,gamma,mean=None,std=None,verbose=False):
 
     return range
 
+def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.norm()):
+    '''
+    \nhypothesistest for mu0 and sig0
+    \n
+    '''
 
-#TODO: Change confidenceRange to (range mu),(range std) and use .interval(loc=,scale=)
-#TODO: Prediction Range of Populations
+    #ttest_1samp
+    
+    #base data
 
-#TODO: Hypothesentest
-#TODO: Data to vert??
+    m = np.mean(data)
+    s = np.std(data, ddof=1)
+    N=len(data)
+
+    # Determine konstants for mean
+    c1 = stats.t.ppf((1-gamma)/2, N-1)
+    c2 = stats.t.ppf((1+gamma)/2, N-1)
+    mu_min = m - ((c2*s)/np.sqrt(N))
+    mu_max = m - ((c1*s)/np.sqrt(N))
+
+    if verbose:
+        if std==None:
+            print("Calculating confidence range with unknown variance:")
+        else:
+            print("Calculating confidence range with known variance:")
+
+        print("c1: ",c1,"   c2: ",c2, "   mu_min: ",mu_min, "   mu_max: ",mu_max)
+
+    if std==None:
+        c1 = stats.chi2.ppf((1-gamma)/2, N-1)
+        c2 = stats.chi2.ppf((1+gamma)/2, N-1)
+        sdev_min = np.sqrt((N-1)/c2)*s
+        sdev_max = np.sqrt((N-1)/c1)*s
+
+        if verbose:
+            print("c1: ",c1,"   c2: ",c2, "   sdev_min: ",sdev_min, "   sdev_max: ",sdev_max)
+
+        return mu_min, mu_max, sdev_min, sdev_max
+    
+    
+    return mu_min, mu_max
+
+
+
+#hypothesentest mult data
+    #levene test for std
+    #ttest_ind for mean
+
+    return("prob_arr [[correct decision mu0, error type2],[error type1, correct decision mu1]]")
+
+#TODO: Hypothesentest   one sample difference in samples
+#TODO: Data to vert??      shapiro for norm
 #TODO: Gütefunktion  bigger smaller both
 #TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
 #TODO: Correlated Variables
 #TODO: Measurement system analysis
-#TODO: ? Plots
+#TODO: ? Plots    Histogramm
+#TODO: Normal Distribution Test
 
 #TODO: list all important distributions: norm uniform t chi chi2 weißbull etc
 
