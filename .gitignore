@@ -1,3 +1,7 @@
 __pycache__/TSST.cpython-310.pyc
 Feuchtesensor.mat
 RegressionHumiditySensor_StandardizedInputVariables.py
+FormaldehydSchaetzung.csv
+Linearitaet.csv
+Streuverhalten.csv
+SystematischerMessfehler.csv
