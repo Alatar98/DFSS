@@ -670,6 +670,7 @@ def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.n
 #TODO: Measurement system analysis
 #TODO: ? Plots    Histogramm
 #TODO: Normal Distribution Test
+#TODO: C_g-  and C_gk- ?
 
 #TODO: list all important distributions: norm uniform t chi chi2 weißbull etc
 
