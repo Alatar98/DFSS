@@ -666,11 +666,14 @@ def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.n
 #TODO: Data to vert??      shapiro for norm
 #TODO: Gütefunktion  bigger smaller both
 #TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
+#TODO: Tolerierung with correlation
 #TODO: Correlated Variables
 #TODO: Measurement system analysis
 #TODO: ? Plots    Histogramm
 #TODO: Normal Distribution Test
 #TODO: C_g-  and C_gk- ?
+
+#TODO: use _ on internal functions
 
 #TODO: list all important distributions: norm uniform t chi chi2 weißbull etc
 

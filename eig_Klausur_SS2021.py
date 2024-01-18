@@ -27,11 +27,25 @@ ax1.set_ylabel(r'Relative Häufigkeit')
 x=np.linspace(SF_data.min(), SF_data.max(),100)
 ax1.plot(x,stats.norm.pdf(x,loc=SF_data.mean(),scale=SF_data.std(ddof=1)))
 
+print("#################### c) ###################################")
 
 gamma=0.95
 mu_min, mu_max, sdev_min, sdev_max = TT.confidenceRange(SF_data,gamma)
 
 print(f"conf range mean: {mu_min}-{mu_max} \n conf range std: {sdev_min}-{sdev_max}")
+
+
+
+print("########################### d) #############################")
+
+
+T=0.02
+
+C_g = 0.2*T/6/SF_data.std(ddof=1)   #>1.33
+C_gk = (0.1*T-abs(SF_data.mean()-1))/3/SF_data.std(ddof=1) #>1.33
+
+
+print(f"C_g: {C_g}     C_gk: {C_gk}")
 
 
 print("################################  e) ##########################")
@@ -99,6 +113,9 @@ print("Means: ",STF_data_comb.mean(axis=0))
 print("Std: ",STF_data_comb.std(axis=0))
 
 
+#GRR Value!!!!!
+
+
 print("################################  ...) ##########################")
 print("################################  m) ##########################")
 
@@ -107,13 +124,14 @@ FS_data = pd.read_csv('FormaldehydSchaetzung.csv', sep=';')
 
 scaled_DF, stder =TT.stder(FS_data,'F')
 
+
 model = TT.Mult_M_regression(scaled_DF,'F',M=1)
 
 print(model.summary())
 
 print("################################  n) ##########################")
 
-FS_data_relevant=scaled_DF[["NOx","CO","F"]]
+FS_data_relevant=scaled_DF[["NOx","O2","CO","F"]]
 
 model2 = TT.Mult_M_regression(FS_data_relevant,'F',M=2)
 
@@ -121,8 +139,19 @@ print(model2.summary())
 
 print("################################  n) ##########################")
 
-to_predict=stder.scl(pd.DataFrame({"NOx": [0.426], "CO": [0.372]}))
+to_predict=stder.scl(pd.DataFrame({"NOx": [0.426], "CO": [0.372], "O2": [5.5]}))
 print("prediction: ",model2.predict(to_predict))
+
+
+#there is a function for this
+
+
+#other function
+# model.conf_int
+
+#prob = {"NOx": stats.norm(loc=0.426,scale=scaled_DF["NOx"].std()),
+#        "CO": stats.norm(loc=0.372,scale=scaled_DF["CO"].std())}
+#pdf_conv = TT.conv(prob,"26.4042 + 31.3236*CO - 12.8606*CO**2 + 13.6842*CO*NOx",verbose=True,res=0.0001)
 
 
 
