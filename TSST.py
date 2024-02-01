@@ -839,7 +839,7 @@ def tolerancing(prob, formula_str, gamma, corr={}, verbose=False, res=0.000001,x
 
     stat_sim_sort = np.sort(stat_sim)
     stat_sim_cdf = np.arange(1, N+1, 1)/N
-    
+
     index_min = np.min(np.where(stat_sim_cdf >= (1-gamma)/2))
     index_max = np.min(np.where(stat_sim_cdf >= (1+gamma)/2))
     stat_sim_num = stat_sim_sort[index_max] - stat_sim_sort[index_min]
@@ -854,17 +854,47 @@ def tolerancing(prob, formula_str, gamma, corr={}, verbose=False, res=0.000001,x
 
 
 
+def hypothesis_t_test(HYP_GAMMA0, HYP_ALPHA, HYP_SIG, DELTA_MAX, ds, detect_warsch, plot=True,x_label="What/Unit"):
+    
+    c1 = stats.norm.ppf(HYP_ALPHA/2)
+    c2 = stats.norm.ppf(1 - HYP_ALPHA/2)
+    hyp_limit_1 = HYP_GAMMA0 + c1*HYP_SIG
+    hyp_limit_2 = HYP_GAMMA0 + c2*HYP_SIG
+
+    print("Lower bound of hypothesis test:", hyp_limit_1)
+    print("Upper bound of hypothesis test:", hyp_limit_2)
+
+
+    # Standarddeviation of poulation is known, z-test to gamma0 = 1
+    # calculation interval for accpetance of hypothesis
+    hyp_gamma_var = np.arange(HYP_GAMMA0-DELTA_MAX, HYP_GAMMA0+DELTA_MAX+ds, ds)
+
+    hyp_guete = 1 + stats.norm.cdf((hyp_limit_1 - hyp_gamma_var)/HYP_SIG) - stats.norm.cdf((hyp_limit_2 - hyp_gamma_var)/HYP_SIG)
+    index_limit = np.min(np.where(hyp_guete <= detect_warsch))
+    gamma0_delta_limit = HYP_GAMMA0 - hyp_gamma_var[index_limit]
+    print(r"With probability of {detect_warsch}% detectable deviation:", gamma0_delta_limit)
+
+
+    if plot:
+        fig2 = plt.figure(2, figsize=(6, 4))
+        fig2.suptitle('')
+        ax1 = fig2.subplots(1, 1)
+        ax1.plot(hyp_gamma_var, hyp_guete, 'b')
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel('Quality function')
+        ax1.grid(True)
 
 
 
 
-
-def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.norm()):
+def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.norm(),gamma=0.95):
     '''
     \nhypothesistest for mu0 and sig0
     \n
     '''
 
+
+    return "Not Done Yet"
     #ttest_1samp
     
     #base data

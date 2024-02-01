@@ -15,6 +15,60 @@ import sympy as syms
 import matplotlib.pyplot as plt
 
 
+
+HYP_GAMMA0 = 1
+HYP_ALPHA = 0.1
+HYP_SIG = 0.005
+
+DELTA_MAX = 0.05
+ds=0.001
+detect_warsch=0.99
+
+c1 = stats.norm.ppf(HYP_ALPHA/2)
+c2 = stats.norm.ppf(1 - HYP_ALPHA/2)
+hyp_limit_1 = HYP_GAMMA0 + c1*HYP_SIG
+hyp_limit_2 = HYP_GAMMA0 + c2*HYP_SIG
+print("")
+print("Untere Annahmegrenze des Hypothesentests:", hyp_limit_1)
+print("Obere Annahmegrenze des Hypothesentests:", hyp_limit_2)
+
+
+# Standarddeviation of poulation is known, z-test to gamma0 = 1
+# calculation interval for accpetance of hypothesis
+
+
+hyp_gamma_var = np.arange(HYP_GAMMA0-DELTA_MAX, HYP_GAMMA0+DELTA_MAX+ds, ds)
+
+hyp_guete = 1 + stats.norm.cdf((hyp_limit_1 - hyp_gamma_var)/HYP_SIG) - stats.norm.cdf((hyp_limit_2 - hyp_gamma_var)/HYP_SIG)
+index_limit = np.min(np.where(hyp_guete <= detect_warsch))
+gamma0_delta_limit = HYP_GAMMA0 - hyp_gamma_var[index_limit]
+print("")
+print("Mit einer Wahrscheinlichkeit von 99 % erkennbare Abweichung:",
+      gamma0_delta_limit)
+
+# Visualization for plausibilization
+fig2 = plt.figure(2, figsize=(6, 4))
+fig2.suptitle('')
+ax1 = fig2.subplots(1, 1)
+ax1.plot(hyp_gamma_var, hyp_guete, 'b')
+ax1.set_xlabel(r'To meassured')
+ax1.set_ylabel('Gütefunktion')
+ax1.grid(True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+return None
+
 GAMMA = 0.95
 
 # Data according to problem
