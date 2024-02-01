@@ -15,6 +15,7 @@ import re
 import scipy.stats as stats
 from sympy import symbols, sympify
 import sympy as syms
+import matplotlib.pyplot as plt
 
 
 from sklearn.preprocessing import StandardScaler
@@ -104,7 +105,7 @@ def regression_fit(df, y_name, comb, p_val=0.05,verbose=False):
         #check if regression has no more unnecesary components (return)
         if (fit.pvalues < p_val).all():
             print("Regression done")
-            return fit
+            return model, fit
         
         #remove component with highest p-value
         #print(fit.pvalues,comb[fit.pvalues.argmax()-1])
@@ -544,9 +545,9 @@ def confidenceRange(data, gamma, std=None, verbose=False):
         if verbose:
             print("c1: ",c1,"   c2: ",c2, "   sdev_min: ",sdev_min, "   sdev_max: ",sdev_max)
 
-        return mu_min, mu_max, sdev_min, sdev_max
+        return (mu_min, mu_max) , (sdev_min, sdev_max)
     
-    return mu_min, mu_max
+    return (mu_min, mu_max) , (std, std)
 
 
 #confidence Range for the Comparison of Populations calculation
@@ -612,6 +613,89 @@ def predictionRange(data,gamma,mean=None,std=None,verbose=False):
 
     return range
 
+
+
+def HistDist(data, bins=15, da=100, figsize=(12, 4), subtitle="Histogramm with Distribution", verbose=False,set_axis=False):
+    """
+    Plots histograms with corresponding distribution curves for each column in the given data.
+
+    Parameters:
+    - data: pandas DataFrame
+        The input data containing the columns to be plotted.
+    - bins: int, optional
+        The number of bins to use for the histogram. Default is 15.
+    - da: int, optional
+        The number of data points to use for the distribution curve. Default is 100.
+    - figsize: tuple, optional
+        The size of the figure. Default is (12, 4).
+    - subtitle: str, optional
+        The subtitle for the figure. Default is "Histogramm with Distribution".
+    - verbose: bool, optional
+        Whether to print additional information. Default is False.
+    - set_axis: bool, optional
+        Whether to set the axis limits based on the data range. Default is False.
+
+    Returns:
+    - axis: numpy array
+        The axes objects of the subplots.
+
+    """
+    
+    axis = []
+    fig1 = plt.figure(1, figsize=figsize)
+    fig1.subtitle = subtitle
+    axis = fig1.subplots(1, len(data.columns), squeeze=False)
+    for i, (col, ax) in enumerate(zip(data.columns, axis[0])):
+        sides = (data[col].max() - data[col].min())/10
+        x_ax = np.linspace(data[col].min()-sides, data[col].max()+sides, da)
+        ax.hist(data[col], density=True, bins=bins, facecolor='b', label="Meassured")
+        ax.plot(x_ax, stats.norm.pdf(x_ax, np.mean(data[col]), np.std(data[col], ddof=1)), 'r', label="Distribution")
+        if set_axis:
+            ax.axis([data[col].min()-sides, data[col].max()+sides, 0, 1])
+        ax.grid(True)
+        ax.set_xlabel(r'Unit')
+        ax.set_ylabel(r'Relative Frequencie')
+        ax.set_title(col)
+    axis[0][-1].legend()
+
+    return axis
+
+
+def correlation(data1, data2, gamma=0.95):
+    """
+    Calculates the Pearson's correlation coefficient between two datasets and returns the correlation coefficient,
+    p-value, and confidence interval.
+
+    Parameters:
+    data1 (array-like): The first dataset.
+    data2 (array-like): The second dataset.
+    gamma (float, optional): The confidence level for the confidence interval. Default is 0.95.
+
+    Returns:
+    corr (float): The Pearson's correlation coefficient.
+    p (float): The p-value.
+    corr_min (float): The lower bound of the confidence interval.
+    corr_max (float): The upper bound of the confidence interval.
+    """
+    
+    corr, p = stats.pearsonr(data1, data2)
+
+    print('Pearsons correlation: %.3f' % corr)
+    print('p-value: %.3f' % p)
+
+    N = len(data1)
+
+    c1 = stats.norm.ppf((1 - gamma)/2)
+    c2 = stats.norm.ppf((1 + gamma)/2)
+    corr_min = np.tanh(np.arctanh(corr) - c2/np.sqrt(N-3))
+    corr_max = np.tanh(np.arctanh(corr) - c1/np.sqrt(N-3))
+
+    print(f"Confidence Range: {round(corr_min, 4)} <= {round(corr, 4)} <= {round(corr_max, 4)}")
+    
+    return corr, p, corr_min, corr_max
+
+
+
 def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.norm()):
     '''
     \nhypothesistest for mu0 and sig0
@@ -660,13 +744,17 @@ def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.n
     #levene test for std
     #ttest_ind for mean
 
-    return("prob_arr [[correct decision mu0, error type2],[error type1, correct decision mu1]]")
+    #return("prob_arr [[correct decision mu0, error type2],[error type1, correct decision mu1]]")
+
+
+#TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
+#TODO: Tolerierung with correlation
+
 
 #TODO: Hypothesentest   one sample difference in samples
 #TODO: Data to vert??      shapiro for norm
 #TODO: Gütefunktion  bigger smaller both
-#TODO: Tolerierung alle varianten  (Faltung,Monte Carlo, arithmetischer, Grenzwertsatz etc.)  +Vergleich empfindlichkeiten
-#TODO: Tolerierung with correlation
+
 #TODO: Correlated Variables
 #TODO: Measurement system analysis
 #TODO: ? Plots    Histogramm

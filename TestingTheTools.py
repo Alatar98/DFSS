@@ -12,6 +12,14 @@ import re
 import TSST as TT
 
 
+df = pd.read_csv("FormaldehydSchaetzung.csv", header=0,sep=";")
+
+TT.HistDist(df)
+
+
+return None
+exit()
+exit()
 gamma = 0.95
 
 data = [4.3, 4.5, 4.2, 4.3, 4.3, 4.7, 4.4, 4.2, 4.3, 4.5]
