@@ -744,6 +744,10 @@ def tolerancing(prob, formula_str, gamma, corr={}, verbose=False, res=0.000001,x
     #calculate tolerance according to central limit theorem
     centr_limit=sum([(stds[name] * sens[name])**2 for name in names_list])
 
+    if verbose:
+        for name in names_list:
+            print(r"Toleranzursache {name}: {stds[name] * sens[name]}")
+
 
     c1 = stats.norm.ppf((1 - gamma)/2)
     c2 = stats.norm.ppf((1 + gamma)/2)

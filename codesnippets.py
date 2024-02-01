@@ -179,3 +179,47 @@ if ((m_hyp_c1 <= m_hyp_diff) & (m_hyp_diff <= m_hyp_c2)):
     print("Abweichung nicht signifikant")
 else:
     print("Abweichung signifikant")
+
+
+'Korrelationsanalyse   (n einen signifi-kanten  Einfluss auf M)'
+# Correlation test H0: roh = 0, H1: roh <> 0
+m_corr = pd.DataFrame({'m': np.append(data["M1"].reshape(-1),
+                                      data["M2"].reshape(-1)),
+                       'n': np.append(data["n1"].reshape(-1),
+                                      data["n2"].reshape(-1))})
+Corr, p = stats.pearsonr(m_corr['m'], m_corr['n'])
+print()
+print('Korrelation zwischen den Größen: ', Corr)
+print('p-value zur Korrelation : ', round(p, 5))
+if (p <= 0.05):
+    print("Korrelation signifikant")
+else:
+    print("Korrelation nicht signifikant")
+
+
+
+'plot with std mean and outliers'
+ax1.boxplot(STF_data)
+
+
+'check linearity'
+# Regression function with confidence bounds
+#deviation = reference - measurement
+poly = ols("deviation ~ reference", y_linearity)
+model = poly.fit()
+# print(model.summary())
+y_plot = np.arange(1.2, 2.1, 0.1)
+y_regress = pd.DataFrame({"reference": np.reshape(y_plot, -1)})
+y_regress["deviation"] = model.predict(y_regress)
+ax1.plot(y_regress["reference"], y_regress["deviation"], 'C3')
+y_regress["confidence"], y_regress["prediction"] =conf_pred_band_ex(y_regress, poly, model)
+ax1.plot(y_regress["reference"],y_regress["deviation"]+y_regress["confidence"], 'C3:')
+ax1.plot(y_regress["reference"],y_regress["deviation"]-y_regress["confidence"], 'C3:')
+
+print("")
+print("Linearität")
+print("Prüfung Regressionsgerade")
+if (model.pvalues > 0.05).all(axis=None):
+    print("Keine signifikante Abweichung zur Linearität")
+else:
+    print("Signifikante Abweichung zur Linearität")
