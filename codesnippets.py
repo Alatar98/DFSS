@@ -49,6 +49,12 @@ measurement_plot = pd.DataFrame({"input": np.arange(min, max, ds)})
 measurement_plot["result"] = fit.predict(measurement_plot)
 measurement_plot["confidence"], measurement_plot["prediction"] = conf_pred_band_ex(measurement_plot, model, fit, alpha=alpha)
 
+ax.plot(measurement["input"], measurement["result"], 'bo',label='Messwerte')
+ax.plot(measurement_plot["input"], measurement_plot["result"], 'r',label='Regressionsfunktion')
+ax.plot(measurement_plot["ki"],measurement_plot["tr"]+measurement_plot["confidence"], 'r:',label='Konfidenzbereich')
+ax.plot(measurement_plot["ki"],measurement_plot["tr"]-measurement_plot["confidence"], 'r:')
+ax.plot(measurement_plot["ki"],measurement_plot["tr"]+measurement_plot["prediction"], 'g--',label='Prognosebereich')
+ax.plot(measurement_plot["ki"],measurement_plot["tr"]-measurement_plot["prediction"], 'g--')
 
 'confidence range'
 TT.confidenceRange()
@@ -70,3 +76,9 @@ TT.Correlation()
 ax.plot(data1, data2, 'b+')
 
 
+'conf iterval of model'
+fit.conf_int(alpha=alpha)
+
+
+'tolerancing (all)'
+TT.tolerancing()

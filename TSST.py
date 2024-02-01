@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
 
-def word_multiplicator_backend(string,words,M,comb):
+def _word_multiplicator_backend(string,words,M,comb):
     'only used by word_multiplicator'
     comb.append(string)
     words_copy=words.copy()
@@ -29,23 +29,23 @@ def word_multiplicator_backend(string,words,M,comb):
         if M==1:
             comb.append(string+"*"+word)
         else: 
-            word_multiplicator_backend(string+"*"+word,words_copy,M-1,comb)
+            _word_multiplicator_backend(string+"*"+word,words_copy,M-1,comb)
         words_copy.remove(word)
 
 
-def word_multiplicator(words,M=2):
+def _word_multiplicator(words,M=2):
     'returns all possible products with words up to degree M.'
     if M==1:
         return words
     comb=[]
     words_copy=words.copy()
     for word in words:
-        word_multiplicator_backend(word,words_copy,M-1,comb)
+        _word_multiplicator_backend(word,words_copy,M-1,comb)
         words_copy.remove(word)
     return comb
 
 
-def word_interactor_backend(string,words,M,comb):
+def _word_interactor_backend(string,words,M,comb):
     'only used by word_interactor'
     comb.append(string)
     words_copy=words.copy()
@@ -54,11 +54,11 @@ def word_interactor_backend(string,words,M,comb):
             comb.append(string+"*"+word)
         else: 
             words_copy.remove(word)
-            word_interactor_backend(string+"*"+word,words_copy,M-1,comb)
+            _word_interactor_backend(string+"*"+word,words_copy,M-1,comb)
         
 
 
-def word_interactor(words,M=2):
+def _word_interactor(words,M=2):
     'returns all possible interactions with words up to degree M.'
     #m must be smaller then len(words)
     if M>len(words):
@@ -67,10 +67,10 @@ def word_interactor(words,M=2):
     words_copy=words.copy()
     for word in words:
         words_copy.remove(word)
-        word_interactor_backend(word,words_copy,M-1,comb)
+        _word_interactor_backend(word,words_copy,M-1,comb)
     return comb
 
-def word_squarer(words,M=1):
+def _word_squarer(words,M=1):
     'returns all squares of words from 1 to the degree M.'
     [[str(word)+"**"+str(i+1) for word in words] for i in range(M)]
     comb=[]
@@ -130,16 +130,16 @@ def Mult_M_regression(df, y_name, M=2, full=True, extend_terms=[], p_val=0.05,ve
     words = [col for col in df.columns if col != y_name]
     #get all possible combinations up to degree M to create the formula
     if full:
-        comb = word_multiplicator(words,M)
+        comb = _word_multiplicator(words,M)
     else:
-        comb = word_interactor(words,M)
+        comb = _word_interactor(words,M)
 
     comb.extend(extend_terms)
 
     return regression_fit(df, y_name, comb, p_val=p_val,verbose=verbose)
 
 
-def keyword_match(input_string, keyword, defaultM=1):
+def _keyword_match(input_string, keyword, defaultM=1):
     '''
     \nsearch input_string for keywordN and return [string[:keyword],string[keyword:],N]
     '''
@@ -192,12 +192,12 @@ def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single",
             inserter=[]
             for ele in element_insert:
                 
-                match = keyword_match(ele, single)
+                match = _keyword_match(ele, single)
                 if match == None:
                     single_replaced.extend([ele])
                     continue
 
-                for instert in word_squarer(words, match[2]):
+                for instert in _word_squarer(words, match[2]):
                     inserter.append(match[0]+"("+instert+")"+match[1])
             if element_insert == inserter:
                 break
@@ -210,12 +210,12 @@ def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single",
             inserter=[]
             for ele in element_insert:
                 
-                match = keyword_match(ele, inter,defaultM=2)
+                match = _keyword_match(ele, inter,defaultM=2)
                 if match == None:
                     inter_replaced.extend([ele])
                     continue
 
-                for instert in word_interactor(words, match[2]):
+                for instert in _word_interactor(words, match[2]):
                     inserter.append(match[0]+"("+instert+")"+match[1])
             if element_insert == inserter:
                 break
@@ -227,12 +227,12 @@ def formula_regression(df, y_name, formula_elements,p_val=0.05, single="single",
             inserter=[]
             for ele in element_insert:
                 
-                match = keyword_match(ele, full,defaultM=2)
+                match = _keyword_match(ele, full,defaultM=2)
                 if match == None:
                     comb.extend([ele])
                     continue
 
-                for instert in word_multiplicator(words, match[2]):
+                for instert in _word_multiplicator(words, match[2]):
                     inserter.append(match[0]+"("+instert+")"+match[1])
             if element_insert == inserter:
                 break
@@ -331,7 +331,7 @@ def stder(X, exclude_col=None, ddof=1):
     return x_std, fitted
 
 
-class ExcludingNormScaler():  #MinMaxScaler????
+class ExcludingNormScaler():
     '''
     Scaler with (X - X.min)/(X.max-X.min)\n
     The Scaler ignores the given column.\n
@@ -416,9 +416,9 @@ def normer(X, exclude_col=None, min_val={}, max_val={}):
     x_std = fitted.scl(X)
     return x_std, fitted
 
+#TODO: MinMaxScaler
 
-
-def conv(prob, formula_str, res, x_scaler=5, verbose=False):
+def convolute(prob, formula_str, res, x_scaler=5, verbose=False):
     '''
     Parameters
     ----------
@@ -696,6 +696,169 @@ def correlation(data1, data2, gamma=0.95):
 
 
 
+def tolerancing(prob, formula_str, gamma, corr={}, verbose=False, res=0.000001,x_scaler=5,N=10000):
+
+    tol={}          #the tolerance values are stored here
+    functions={}    #if the method to calculate the tolerance uses a function it is stored here
+
+    #get list of names and prefix _ to all names to avoid convusion with predefined symbols
+    names_list_orig=list(prob.keys())
+    names_list = ['_'+name for name in names_list_orig]
+    corr = {"_"+k: [("_"+name, val) for (name, val) in values] for k, values in corr.items()}
+    prob = {'_'+k: v for k, v in prob.items()}
+    for name in names_list_orig:
+        formula_str=formula_str.replace(name,'_'+name)
+
+    #get means and std
+    means={k: v.mean() for k, v in prob.items()}
+    stds={k: v.std() for k, v in prob.items()}
+    
+    ###########statistical tolerancing with linerization#################
+
+    # Create Symbol objects from variable names
+    symbols_list = symbols(names_list)
+
+    # Build the expression using the formula string
+    expression = sympify(formula_str)
+    
+    #if verbose is set print the symbols and expression
+    if verbose:
+        print("symbols: ",symbols_list)
+        print("expression: ",expression)
+        
+
+    # Replace any variable names in the expression with the corresponding symbols
+    for var_name, var_symbol in zip(names_list, symbols_list):
+        expression = expression.subs(var_name, var_symbol)
+     
+
+    #calculation of sensitivities
+    sens={}
+    for name in names_list:
+        sens[name] = abs(float(expression.diff(name).evalf(subs=means)))
+
+    #if verbose is set print the sensitivities
+    if verbose:
+        print("sensitivities: ",sens)
+
+    #calculate tolerance according to central limit theorem
+    centr_limit=sum([(stds[name] * sens[name])**2 for name in names_list])
+
+
+    c1 = stats.norm.ppf((1 - gamma)/2)
+    c2 = stats.norm.ppf((1 + gamma)/2)
+    centr_limit_base = (c2 - c1)
+    tol["CentralLimit_noCorr"] = np.sqrt(centr_limit)*centr_limit_base
+
+    for name, values in corr.items():
+        for corr_name, corr_val in values:
+            centr_limit+=2*stds[name]*stds[corr_name]*sens[name]*sens[corr_name]*corr_val
+
+    tol["CentralLimit"] = np.sqrt(centr_limit)*centr_limit_base
+        
+    
+
+    #calculate propability density functions
+    pdfs={}
+    w_ges=0
+    for name in names_list:
+        w = float(np.abs(x_scaler*stds[name]*sens[name]))
+        w_ges+=w
+        scaled_ax = np.array(np.arange(-w, w, res)/sens[name]+means[name], dtype=np.float64)
+
+        pdfs[name]=prob[name].pdf(scaled_ax)
+        
+    #if verbose is set print the lenght of the pdfs
+    if verbose:
+        print("pdf_lenght: ",{key:len(pdf) for key,pdf in pdfs.items()})
+        
+    #convolute
+    conv=[1]   #/res  to make it constant but canceled out by /np.max later
+    for name in names_list:
+        conv=np.convolve(conv, pdfs[name])
+
+    cdf = np.cumsum(conv)
+    conv = conv/np.max(cdf)
+    
+    #if verbose is set print the sum of all objects. this value should be close to one
+    if verbose:
+        #add the scaling that is normally done during convolution and cumsum
+        man_scaling_check=np.max(cdf)*res**(len(names_list))
+        #add the scaling that results from changing the x axis  instead of the stdev when generating the pdfs
+        for sens in sens.values():
+            man_scaling_check=man_scaling_check/sens
+        print("cumsum: ",man_scaling_check)
+
+    x = np.linspace(-w_ges, w_ges, len(conv))
+
+    conv_cdf = np.cumsum(conv)
+
+    indexmin = np.min(np.where(conv_cdf >= (1-gamma)/2))
+    indexmax = np.min(np.where(conv_cdf >= (1+gamma)/2))
+
+    z_maxCon = x[indexmax]
+    z_minCon = x[indexmin]
+    z_tolerance_con = z_maxCon - z_minCon
+
+    tol["convolution"] = (z_tolerance_con)
+
+    
+
+    functions["convolution"] = (x,conv_cdf)
+
+    #statistical simulation
+    sim = {}
+
+    for name in names_list:
+        if name not in corr:
+            sim[name] = prob[name].rvs(size=N)
+        
+    for name in names_list:
+        if name in corr:
+            sim[name] = np.zeros(N)
+            rem=0
+            for corr_name, corr_val in corr[name]:
+                sim[name] += (sim[corr_name]-means[corr_name])*corr_val*stds[name]/stds[corr_name]
+                rem+=corr_val**2
+            
+            sim[name] += means[name] + (prob[name].rvs(size=N)-means[name])*np.sqrt(1-rem)
+
+
+    stat_sim =[]
+    for i in range(N):
+        #print([(name,sim[name][i]) for name in names_list])
+        #print(expression)
+        stat_sim.append(float(expression.evalf(subs={name:sim[name][i] for name in names_list})))
+
+    # Tolerance calculation according monte carlo simulation mcs
+    c1 = stats.t.ppf((1-gamma)/2, N-1)
+    c2 = stats.t.ppf((1+gamma)/2, N-1)
+    tolerance_mcs = np.std(stat_sim, ddof=1)*np.sqrt(1+1/N)*(c2-c1)
+
+    tol["monteCarloSimulation"] = tolerance_mcs
+
+    stat_sim_sort = np.sort(stat_sim)
+    stat_sim_cdf = np.arange(1, N+1, 1)/N
+    
+    index_min = np.min(np.where(stat_sim_cdf >= (1-gamma)/2))
+    index_max = np.min(np.where(stat_sim_cdf >= (1+gamma)/2))
+    stat_sim_num = stat_sim_sort[index_max] - stat_sim_sort[index_min]
+
+    tol["numericalSimulation"] = stat_sim_num
+
+    functions["numericalSimulation"] = (stat_sim_sort,stat_sim_cdf)
+
+
+
+    return tol, functions
+
+
+
+
+
+
+
+
 def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.norm()):
     '''
     \nhypothesistest for mu0 and sig0
@@ -737,7 +900,6 @@ def hypothesistest(data, alpha, mu0, std0, verbose = False, distribution=stats.n
     
     
     return mu_min, mu_max
-
 
 
 #hypothesentest mult data
